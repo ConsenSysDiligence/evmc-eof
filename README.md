@@ -13,6 +13,18 @@ to access Ethereum environment and state.
 
 ## Usage
 
+### Build
+1. install [nlohmann-json](https://json.nlohmann.me/integration/package_managers/)
+2. run `mkdir build && cd build`
+3. run `cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/cable/toolchains/cxx17.cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=TRUE -DEVMC_TESTING=ON`
+4. run `cd .. && cmake --build build -- -j4`
+
+### Usage
+1. Download evmone vm from [Releases](https://github.com/ethereum/evmone/releases) or compile one for yourself.
+2. compile smart contract in eof format
+3. run evmc `build/bin/evmc run --vm <libevmone.so path> --rev 14 "<bytecode or path starting with @>" --create --input "<ABI Encoded call>" --storage-dump-file "<path to file with storage dump>" --logs-dump-file "<path to file with logs dump>"`
+4. Running command above will get you storage and logs dump in paths you specified.
+
 ### Documentation
 
 Please visit the [documentation].

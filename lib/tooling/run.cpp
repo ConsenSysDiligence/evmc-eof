@@ -8,6 +8,69 @@
 #include <evmc/tooling.hpp>
 #include <chrono>
 #include <ostream>
+#include <nlohmann/json.hpp>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+
+namespace evmc {
+    std::string bytes_to_hex(const uint8_t* src, const size_t length) {
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0');
+
+        for (size_t i = 0; i < length; i++) {
+            ss << std::hex << std::setw(2) << static_cast<int>(src[i]);
+        }
+        return ss.str();
+    }
+
+    std::string bytes_to_hex(const bytes& src) {
+        // convert src to uint8_t array with size to call previous function
+        return bytes_to_hex(src.data(), src.size());
+    }
+
+    void to_json(nlohmann::json& j, const bytes32& p) {
+        j = bytes_to_hex(p.bytes, 32);
+    }
+
+
+    void to_json(nlohmann::json& j, const address& p) {
+        j = bytes_to_hex(p.bytes, 20);
+    }
+
+    void to_json(nlohmann::json& j, const MockedHost::log_record& p) {
+        j = nlohmann::json{ {"address", p.creator}, {"data", bytes_to_hex(p.data)}, {"topics", p.topics} };
+    }
+}
+
+namespace nlohmann {
+    template <typename T>
+    struct adl_serializer<std::unordered_map<evmc::bytes32, T>> {
+        static void to_json(json& j, const std::unordered_map<evmc::bytes32, T>& map) {
+            for (const auto &[key, value] : map)
+            {
+                j[evmc::bytes_to_hex(key.bytes, 32)] = value;
+            }
+        }
+    };
+
+    template <typename T>
+    struct adl_serializer<std::unordered_map<evmc::address, T>> {
+        static void to_json(json& j, const std::unordered_map<evmc::address, T>& map) {
+            for (const auto &[key, value] : map)
+            {
+                j[evmc::bytes_to_hex(key.bytes, 20)] = value;
+            }
+        }
+    };
+}
+
+namespace evmc {
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE(StorageValue, current, original);
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE(MockedAccount, storage, transient_storage);
+}
+
 
 namespace evmc::tooling
 {
@@ -65,6 +128,25 @@ bool is_eof_container(bytes_view code)
 {
     return code.size() >= 2 && code[0] == MAGIC[0] && code[1] == MAGIC[1];
 }
+
+void dump_storage(MockedHost& host) {
+    const auto file_path = getenv("_STORAGE_DUMP_FILE");
+    std::ofstream file(file_path);
+    nlohmann::json j = host.accounts;
+    file << j;
+    file.flush();
+    file.close();
+}
+
+void dump_logs(MockedHost& host) {
+    const auto file_path = getenv("_LOGS_DUMP_FILE");
+    std::ofstream file(file_path);
+    nlohmann::json j = host.recorded_logs;
+    file << j;
+    file.flush();
+    file.close();
+}
+
 }  // namespace
 
 int run(VM& vm,
@@ -110,6 +192,9 @@ int run(VM& vm,
     out << "\n";
 
     const auto result = vm.execute(host, rev, msg, exec_code.data(), exec_code.size());
+
+    tooling::dump_logs(host);
+    tooling::dump_storage(host);
 
     if (bench)
         tooling::bench(host, vm, rev, msg, exec_code, result, out);

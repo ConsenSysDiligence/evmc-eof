@@ -7,6 +7,7 @@
 #include <evmc/loader.h>
 #include <evmc/tooling.hpp>
 #include <fstream>
+#include <stdlib.h>
 
 namespace
 {
@@ -59,6 +60,8 @@ int main(int argc, const char** argv) noexcept
         std::string input_arg;
         auto create = false;
         auto bench = false;
+        std::string storage_dump_file = "storage_dump.json";
+        std::string logs_dump_file = "logs_dump.json";
 
         CLI::App app{"EVMC tool"};
         const auto& version_flag = *app.add_flag("--version", "Print version information and exit");
@@ -78,11 +81,12 @@ int main(int argc, const char** argv) noexcept
         run_cmd.add_flag(
             "--bench", bench,
             "Benchmark execution time (state modification may result in unexpected behaviour)");
+        run_cmd.add_option("--storage-dump-file", storage_dump_file, "file path to dump contract's storage")->capture_default_str();
+        run_cmd.add_option("--logs-dump-file", logs_dump_file, "file path to dump contract's logs")->capture_default_str();
 
         try
         {
             app.parse(argc, argv);
-
             evmc::VM vm;
             if (vm_option.count() != 0)
             {
@@ -123,6 +127,10 @@ int main(int argc, const char** argv) noexcept
                 // If code_arg or input_arg contains invalid hex string an exception is thrown.
                 const auto code = load_from_hex(code_arg);
                 const auto input = load_from_hex(input_arg);
+
+                setenv("_STORAGE_DUMP_FILE", storage_dump_file.c_str(), 1);
+                setenv("_LOGS_DUMP_FILE", logs_dump_file.c_str(), 1);
+
                 return tooling::run(vm, rev, gas, code, input, create, bench, std::cout);
             }
 

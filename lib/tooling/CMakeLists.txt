@@ -1,11 +1,13 @@
 # EVMC: Ethereum Client-VM Connector API.
 # Copyright 2021 The EVMC Authors.
 # Licensed under the Apache License, Version 2.0.
+find_package(nlohmann_json 3.11.3 REQUIRED)
 
 add_library(tooling STATIC)
 add_library(evmc::tooling ALIAS tooling)
 target_compile_features(tooling PUBLIC cxx_std_17)
 target_link_libraries(tooling PUBLIC evmc::evmc_cpp evmc::mocked_host)
+target_link_libraries(tooling PUBLIC nlohmann_json::nlohmann_json)
 
 target_sources(
     tooling PRIVATE
