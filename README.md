@@ -14,10 +14,8 @@ to access Ethereum environment and state.
 ## Usage
 
 ### Build
-1. install [nlohmann-json](https://json.nlohmann.me/integration/package_managers/)
-2. run `mkdir build && cd build`
-3. run `cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/cable/toolchains/cxx17.cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=TRUE -DEVMC_TESTING=ON`
-4. run `cd .. && cmake --build build -- -j4`
+1. run `cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/cable/toolchains/cxx17.cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=TRUE -DHUNTER_ENABLED=ON -B build`
+2. run `cmake --build build -- -j4`
 
 ### Usage
 1. Download evmone vm from [Releases](https://github.com/ethereum/evmone/releases) or compile one for yourself.
